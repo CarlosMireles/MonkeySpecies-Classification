@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from keras.preprocessing.image import ImageDataGenerator
-
+from keras.callbacks import EarlyStopping
 
 def generatePlot(history):
     # Extracción de datos
@@ -44,8 +44,7 @@ NumPy.random.seed(seed_value)                       # Semilla para NumPy
 TensorFlow.random.set_seed(seed_value)              # Semilla para TensorFlow/Keras
 
 
-number_of_images_per_category = 500                              # 100, 300 or 500
-dataset_path = r".\Dataset with " + str(number_of_images_per_category) + " images"
+dataset_path = r".\Monkeys"
 batch_size = 16
 image_size = (150, 150)
 rescale_factor = 1. / 255
@@ -75,20 +74,34 @@ validation_generator = data_generator.flow_from_directory(
 
 model = Sequential()
 model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(image_size[0], image_size[1], 3)))
-model.add(Dropout(0.25))
 model.add(MaxPooling2D((2, 2)))
-model.add(Flatten())
-model.add(Dense(128, activation='relu'))
-model.add(Dropout(0.5))
-model.add(Dense(5, activation='softmax'))
 
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(MaxPooling2D((2, 2)))
+
+model.add(Conv2D(128, (3, 3), activation='relu'))
+model.add(MaxPooling2D((2, 2)))
+
+model.add(Conv2D(256, (3, 3), activation='relu'))
+model.add(MaxPooling2D((2, 2)))
+
+model.add(Conv2D(512, (3, 3), activation='relu'))
+model.add(MaxPooling2D((2, 2)))
+
+model.add(Flatten())
+
+model.add(Dense(512, activation='relu'))
+model.add(Dropout(0.5))
+
+model.add(Dense(256, activation='relu'))
+model.add(Dropout(0.5))
+
+model.add(Dense(5, activation='softmax'))
 model.summary()
 
 
-from keras.callbacks import EarlyStopping
-
 # Configurar Early Stopping
-early_stopping = EarlyStopping(monitor='val_loss', patience=5)  # 'patience' es el número de épocas sin mejora después de las cuales el
+early_stopping = EarlyStopping(monitor='val_loss', patience=8)
 
 
 model.compile(
@@ -99,24 +112,16 @@ model.compile(
 
 epochs = 30
 
-history_of_train = model.fit(
+trainning = model.fit(
     train_generator,
     epochs=epochs,
     validation_data=validation_generator,
     callbacks=[ early_stopping ]
 )
 
-generatePlot(history_of_train)
+generatePlot(trainning)
 
 score = model.evaluate(validation_generator, steps=50, verbose=0)  #'steps' es el número de lotes a evaluar
 
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
-
-
-#x_batch, y_batch = next(train_generator)
-#for i in range (0, 5):
-#    image = x_batch[i]
-#    plt.imshow(image)
-#    plt.show()
-#
